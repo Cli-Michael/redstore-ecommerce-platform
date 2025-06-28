@@ -1,0 +1,39 @@
+# ⚙️ Node.js Dependencies
+backend/node_modules/
+frontend/node_modules/
+
+# ⚙️ Build Output
+frontend/build/
+frontend/dist/
+backend/dist/
+
+# ⚙️ Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ⚙️ Environment Variables
+*.env
+*.env.*
+
+# ⚙️ OS/Editor/System Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ⚙️ Lock files
+frontend/package-lock.json
+frontend/yarn.lock
+backend/package-lock.json
+backend/yarn.lock
+
+# ⚙️ Other custom scripts (if temporary)
+auto_commit.sh
