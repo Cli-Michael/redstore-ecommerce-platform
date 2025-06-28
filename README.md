@@ -57,7 +57,7 @@ redstore-ecommerce-app/
 
 1️⃣ Clone the Repository  
 ```bash
-git clone https://github.com/your-username/redstore-ecommerce-platform.git
+git clone https://github.com/michael-clinton-sudo/redstore-ecommerce-platform.git
 cd redstore-ecommerce-app
 
 2️⃣ Install Backend Dependencies & Start Server
