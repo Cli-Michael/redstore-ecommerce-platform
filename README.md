@@ -1,13 +1,13 @@
-# 🛍️ Redstore E-Commerce App
+# 🛍️ Redstore Commerce Platform
 
-A full-stack e-commerce platform featuring 🔐 user authentication, 🛒 cart, ❤️ wishlist, 📦 orders, 🧾 payments, and 📊 admin analytics — built with 🧰 Node.js + Express backend and 🎨 Bootstrap frontend.
+A full-stack e-commerce platform featuring 🔐 user authentication, 🛒 cart, ❤️ wishlist, 📦 orders, 🧾 payments, and 📊 admin analytics — built with a 🧰 Node.js + Express backend and a responsive, component-based 🎨 Bootstrap frontend.
 
 ## 📁 Project Structure
 
 redstore-ecommerce-app/  
 ├── frontend/      # 🎨 Bootstrap UI with reusable styled components (HTML, CSS, JS)  
 ├── backend/       # 🧰 Node.js + Express RESTful API  
-└── README.md 
+└── README.md  
 
 ## 🚀 Features
 
