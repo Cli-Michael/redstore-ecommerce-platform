@@ -4,10 +4,10 @@ A full-stack e-commerce platform featuring 🔐 user authentication, 🛒 cart, 
 
 ## 📁 Project Structure
 
-redstore-ecommerce-app/
-├── frontend/      # 🎨 Bootstrap-based UI (HTML, CSS, JS)
-├── backend/       # 🧰 Node.js + Express REST API
-└── README.md
+redstore-ecommerce-app/  
+├── frontend/      # 🎨 Bootstrap UI with reusable styled components (HTML, CSS, JS)  
+├── backend/       # 🧰 Node.js + Express RESTful API  
+└── README.md 
 
 ## 🚀 Features
 
