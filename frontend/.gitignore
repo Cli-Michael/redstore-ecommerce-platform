@@ -51,3 +51,4 @@ coverage/
 
 # Ignore local development files
 *.local
+dist/
