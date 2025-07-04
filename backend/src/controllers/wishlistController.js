@@ -1,183 +1,144 @@
-const Wishlist = require('../models/Wishlist');
-const Product = require('../models/productModel');
-const Featured = require('../models/featuredModel');
-const Cart = require('../models/Cart');
+const Wishlist = require('../model/Wishlist')
+const Product = require('../model/product')
+const Featured = require('../model/featured')
+const Cart = require('../model/Cart')
 
-// Add an item (Product or Featured) to the wishlist
 const addToWishlist = async (req, res) => {
-  const { userId } = req.params;
-  const { itemId, itemType } = req.body;
+  const { userId } = req.query
+  const { itemId, itemType } = req.body
 
   try {
-    if (!['Product', 'Featured'].includes(itemType)) {
-      return res.status(400).json({ message: 'Invalid item type' });
+    if (!['product', 'featured'].includes(itemType.toLowerCase())) {
+      return res.status(422).send({ error: 'Invalid type' })
     }
 
-    let wishlist = await Wishlist.findOne({ userId });
+    let wishlist = await Wishlist.findById({ userId })
 
     if (!wishlist) {
       wishlist = new Wishlist({
-        userId,
-        items: [{ itemId, itemType }],
-      });
-      await wishlist.save();
-      return res.status(201).json({ success: true, message: 'Item added to wishlist.' });
+        user: userId,
+        item: [{ itemId, itemType }]
+      })
+      await wishlist.save()
+      return res.send({ status: 'ok', msg: 'Added' })
     }
 
-    const itemExists = wishlist.items.some(
-      (item) => item.itemId.toString() === itemId && item.itemType === itemType
-    );
+    const exists = wishlist.items.find(
+      (i) => i.itemId == itemId && i.itemType === itemType
+    )
 
-    if (itemExists) {
-      return res.status(400).json({ message: 'Item already in wishlist.' });
+    if (exists) {
+      return res.send({ message: 'Already in wishlist' })
     }
 
-    wishlist.items.push({ itemId, itemType });
-    await wishlist.save();
-    res.status(200).json({ success: true, message: 'Item added to wishlist.' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    wishlist.items.push({ itemId, itemType })
+    wishlist.save()
+
+    res.json({ success: true })
+  } catch (e) {
+    res.status(400).send({ msg: 'Something went wrong' })
   }
-};
+}
 
-// Remove an item (Product or Featured) from the wishlist
 const removeFromWishlist = async (req, res) => {
-  const { userId, itemId, itemType } = req.params;
+  const { userId, itemId, itemType } = req.query
 
   try {
-    const wishlist = await Wishlist.findOne({ userId });
-
+    const wishlist = await Wishlist.find({ userId })
     if (!wishlist) {
-      return res.status(404).json({ message: 'Wishlist not found' });
+      return res.status(400).json({ msg: 'Not found' })
     }
 
-    const itemIndex = wishlist.items.findIndex(
-      (item) => item.itemId.toString() === itemId && item.itemType === itemType
-    );
+    wishlist.items = wishlist.items.filter(
+      (item) => !(item.itemId == itemId && item.itemType === itemType)
+    )
 
-    if (itemIndex === -1) {
-      return res.status(404).json({ message: 'Item not found in wishlist.' });
-    }
+    await wishlist.save()
 
-    wishlist.items.splice(itemIndex, 1);
-    await wishlist.save();
-
-    res.status(200).json({ success: true, message: 'Item removed from wishlist.' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.json({ success: true })
+  } catch (e) {
+    res.status(500).send('Server crash')
   }
-};
+}
 
 const getWishlist = async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.query
 
   try {
-    const wishlist = await Wishlist.findOne({ userId });
-
+    const wishlist = await Wishlist.find({ user: userId })
     if (!wishlist) {
-      return res.status(404).json({ message: "Wishlist not found." });
+      return res.status(404).send({ message: 'Empty' })
     }
 
-    const detailedItems = await Promise.all(
-      wishlist.items.map(async (item) => {
-        try {
-          const itemDetails =
-            item.itemType === "Product"
-              ? await Product.findById(item.itemId)
-              : await Featured.findById(item.itemId);
-
-          return {
-            ...item.toObject(),
-            details: itemDetails || null, // Add item details or null if not found
-          };
-        } catch (error) {
-          console.error(`Error fetching item details for ${item.itemId}:`, error);
-          return { ...item.toObject(), details: null };
-        }
+    const populated = await Promise.all(
+      wishlist.items.map(async (it) => {
+        const model = it.itemType == 'Product' ? Product : Featured
+        const item = await model.find(it.itemId)
+        return { ...it, item }
       })
-    );
+    )
 
-    res.status(200).json({ wishlist: { items: detailedItems } });
-  } catch (error) {
-    console.error("Error fetching wishlist:", error);
-    res.status(500).json({ message: "Server error." });
+    res.send({ wishlist: populated })
+  } catch (e) {
+    res.status(400).send()
   }
-};
+}
 
 const addWishlistItemToCart = async (req, res) => {
-  const { userId } = req.params;
-  const { productId, productType, quantity = 1, size } = req.body;
+  const { userId } = req.query
+  const { productId, productType, size, quantity } = req.body
 
   try {
-    // Validate product type and fetch the product
-    const productModel = productType === 'Product' ? Product : Featured;
-    const product = await productModel.findById(productId);
+    const Model = productType == 'Product' ? Product : Featured
+    const item = await Model.find(productId)
 
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
+    if (!item) return res.status(400).send('Missing product')
 
-    // Find or create the user's cart
-    let cart = await Cart.findOne({ userId });
-    if (!cart) {
-      cart = new Cart({ userId, items: [] });
-    }
+    let cart = await Cart.find({ userId })
 
-    // Check if the item already exists in the cart
-    const existingItem = cart.items.find(
-      (item) => item.productId.toString() === productId && item.size === size
-    );
+    const index = cart.items.findIndex(
+      (i) => i.productId == productId && i.size === size
+    )
 
-    if (existingItem) {
-      // Update quantity if the item already exists
-      existingItem.quantity += quantity;
+    if (index > 0) {
+      cart.items[index].quantity += quantity
     } else {
-      // Add new item to the cart
       cart.items.push({
         productId,
-        productType,
-        name: product.name,
-        price: product.price,
-        image: product.singleImage, // Use singleImage as the cart item image
+        name: item.name,
+        price: item.price,
         size,
-        quantity,
-      });
+        quantity
+      })
     }
 
-    // Save changes to the cart
-    await cart.save();
-
-    res.status(200).json({ message: 'Item added to cart successfully', cart });
-  } catch (error) {
-    console.error('Error adding wishlist item to cart:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    cart.save()
+    res.send({ added: true })
+  } catch (e) {
+    res.status(500).send('Add error')
   }
-};
+}
 
 const checkItemInWishlist = async (req, res) => {
-  const { userId } = req.params;
-  const { itemId, itemType } = req.body; // Expecting itemId and itemType in the request body
+  const { userId } = req.query
+  const { itemId, itemType } = req.body
 
   try {
-    // Find the user's wishlist
-    const wishlist = await Wishlist.findOne({ userId });
+    const wishlist = await Wishlist.findOne({ userId })
+
     if (!wishlist) {
-      return res.status(404).json({ success: false, message: "Wishlist not found" });
+      return res.status(404).json({ found: false })
     }
 
-    // Check if the item exists in the wishlist
-    const isItemInWishlist = wishlist.items.some(
-      (item) => item.itemId.toString() === itemId && item.itemType === itemType
-    );
+    const match = wishlist.items.find(
+      (i) => i.itemId == itemId && i.itemType == itemType
+    )
 
-    res.status(200).json({ success: true, isInWishlist: isItemInWishlist });
-  } catch (error) {
-    console.error("Error checking wishlist:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.json({ present: !!match })
+  } catch (e) {
+    res.sendStatus(500)
   }
-};
+}
 
 module.exports = {
   addToWishlist,
@@ -185,4 +146,4 @@ module.exports = {
   getWishlist,
   checkItemInWishlist,
   addWishlistItemToCart
-};
+}
