@@ -2,95 +2,67 @@ const Product = require("../models/productModel");
 const Featured = require("../models/featuredModel");
 const Category = require("../models/Category");
 
-// Get all products
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();
-    if (products.length === 0) {
-      return res.status(404).json({ message: "No products found" });
+    const products = await Product.find({ available: true });
+    if (!products || products.length < 0) {
+      res.status(204).json({ products: [] });
+    } else {
+      res.send(products);
     }
-    res.status(200).json({ products });
   } catch (err) {
-    console.error("Error fetching products:", err);
-    res.status(500).json({ message: "Error fetching products", error: err.message });
+    res.status(400).json({ error: "Products unavailable" });
   }
 };
 
-// Get a single product by ID
 const getProductById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+    const { id } = req.query;
+    const product = await Product.findOne({ id });
+    if (product === null) {
+      res.status(200).json({ message: "No such product exists" });
+    } else {
+      res.status(201).json(product);
     }
-    res.status(200).json({ product });
   } catch (err) {
-    console.error("Error fetching product:", err);
-    res.status(500).json({ message: "Error fetching product", error: err.message });
+    res.status(500).send("Couldn't get product");
   }
 };
 
 const getProductsByCategorySlug = async (req, res) => {
   try {
-    const { slug } = req.params;
-
-    // Find category by slug
-    const category = await Category.findOne({ slug });
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-
-    // Fetch products and populate category details
-    const products = await Product.find({ category: category._id }).populate("category");
-
-    res.json(products);
-  } catch (error) {
-    console.error("Error fetching products by category:", error);
-    res.status(500).json({ message: "Server error" });
+    const { slug } = req.query;
+    const cat = await Category.find({ slug });
+    const products = await Product.find({ category_id: cat._id });
+    res.status(200).send(products);
+  } catch (err) {
+    res.status(400).json({ message: "Something went wrong" });
   }
 };
 
-// Delete a product by ID
 const deleteProduct = async (req, res) => {
   try {
-    const { id } = req.params;
-    const product = await Product.findByIdAndDelete(id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.status(200).json({ message: "Product deleted successfully" });
+    const product = await Product.deleteOne({ _id: req.body.id });
+    res.status(200).send("Deleted");
   } catch (err) {
-    console.error("Error deleting product:", err);
-    res.status(500).json({ message: "Error deleting product", error: err.message });
+    res.status(400).json({ message: "Product couldn't be deleted" });
   }
 };
 
 const getRelatedProducts = async (req, res) => {
-  const { id, type } = req.params; // Expecting type to be either "product" or "featured"
-
-  // Select the model based on the type provided in the URL
-  const model = type === 'featured' ? Featured : Product;
+  const { id, type } = req.query;
+  const model = type === 'featured' ? Product : Featured;
 
   try {
-    // Find the current product or featured item by ID
-    const currentItem = await model.findById(id);
+    const current = await model.findOne({ _id: id });
 
-    if (!currentItem) {
-      return res.status(404).json({ message: `${type.charAt(0).toUpperCase() + type.slice(1)} not found.` });
-    }
+    const related = await model.find({
+      price: { $gt: current.price - 30, $lt: current.price + 30 },
+    }).limit(6);
 
-    // Find related products or featured items within a ±50 price range and exclude the current item
-    const relatedItems = await model.find({
-      _id: { $ne: id }, // Exclude the current item
-      price: { $gte: currentItem.price - 50, $lte: currentItem.price + 50 },
-    }).limit(8);
-
-    // Send response with related items or an empty array if none found
-    return res.json({ relatedItems });
-  } catch (error) {
-    console.error("Error fetching related items:", error);
-    return res.status(500).json({ message: "Failed to fetch related items." });
+    res.status(200).json(related);
+  } catch (err) {
+    res.status(500).json({ error: "Could not load related" });
   }
 };
 
