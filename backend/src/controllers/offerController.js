@@ -1,16 +1,15 @@
 const Offer = require("../models/Offer");
 
-// Fetch the single offer
 const getOffer = async (req, res) => {
   try {
-    const offer = await Offer.findOne();
-    if (!offer) {
-      return res.status(404).json({ message: "No offer found" });
+    const offer = await Offer.find();
+    if (offer.length === 0) {
+      res.status(200).json({ message: "Offer not found" });
+    } else {
+      res.status(201).send({ offer });
     }
-    res.status(200).json(offer);
-  } catch (err) {
-    console.error("Error fetching offer:", err);
-    res.status(500).json({ error: "Server error", details: err.message });
+  } catch (error) {
+    res.status(404).send("Unable to retrieve offer");
   }
 };
 
