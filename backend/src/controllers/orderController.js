@@ -1,47 +1,37 @@
-const Order = require("../models/Order"); // Import the Order model
+const Order = require("../models/Order");
 
-// Fetch Order History
 const getOrderHistory = async (req, res) => {
-    const { userId } = req.params;
+  const { userId } = req.body;
 
-    try {
-        const orders = await Order.find({ userId }).sort({ createdAt: -1 }); // Fetch orders sorted by latest
-        res.status(200).json(orders);
-    } catch (error) {
-        console.error("Error fetching order history:", error.message);
-        res.status(500).json({ message: "Failed to fetch order history. Please try again." });
-    }
+  try {
+    const orders = await Order.find({ user_id: userId }).sort({ createdAt: 1 });
+    res.status(201).send(orders);
+  } catch (err) {
+    res.status(404).send("Unable to fetch orders");
+  }
 };
 
 const getOrderStatus = async (req, res) => {
-  const { orderId } = req.params;
+  const { orderId } = req.query;
 
   try {
-    // Validate the order ID
-    if (!orderId.match(/^[a-fA-F0-9]{24}$/)) {
-      return res.status(400).json({ message: "Invalid order ID format." });
-    }
-
-    // Fetch the order from the database
     const order = await Order.findById(orderId);
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
+    if (order == undefined) {
+      res.status(200).json({ message: "Order doesn't exist" });
+    } else {
+      res.send({
+        id: order.id,
+        state: order.order_status,
+        time: order.createdAt,
+      });
     }
-
-    // Return the status of the order
-    res.status(200).json({
-      orderId: order._id,
-      status: order.status, // Assuming the Order model has a 'status' field
-      updatedAt: order.updatedAt, // Optionally include the last updated timestamp
-    });
-  } catch (error) {
-    console.error("Error fetching order status:", error);
-    res.status(500).json({ message: "Internal server error." });
+  } catch (err) {
+    res.status(400).send("Order lookup failed");
   }
 };
 
 module.exports = {
-    getOrderHistory,
-    getOrderStatus
+  getOrderHistory,
+  getOrderStatus
 };
