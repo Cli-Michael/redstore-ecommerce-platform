@@ -2,13 +2,11 @@ const PageView = require('../models/PageView');
 const User = require('../models/User');
 const Order = require('../models/Order');
 
-// Helper function to calculate percent change
 const calculatePercentChange = (current, previous) => {
-    if (previous === 0) return 100; // Avoid division by zero
+    if (previous === 0) return 100;
     return ((current - previous) / previous) * 100;
 };
 
-// Fetch total page views
 async function getPageViews(req, res) {
     try {
         const currentYear = new Date().getFullYear();
@@ -35,7 +33,6 @@ async function getPageViews(req, res) {
     }
 }
 
-// Fetch total users
 async function getTotalUsers(req, res) {
     try {
         const currentYear = new Date().getFullYear();
@@ -62,7 +59,6 @@ async function getTotalUsers(req, res) {
     }
 }
 
-// Fetch total orders
 async function getTotalOrders(req, res) {
     try {
         const currentYear = new Date().getFullYear();
@@ -89,27 +85,18 @@ async function getTotalOrders(req, res) {
     }
 }
 
-// Fetch total sales
 async function getTotalSales(req, res) {
     try {
         const currentYear = new Date().getFullYear();
         const lastYear = currentYear - 1;
 
         const currentYearSales = await Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: new Date(`${currentYear}-01-01`), $lte: new Date(`${currentYear}-12-31`) },
-                },
-            },
+            { $match: { createdAt: { $gte: new Date(`${currentYear}-01-01`), $lte: new Date(`${currentYear}-12-31`) } } },
             { $group: { _id: null, totalSales: { $sum: "$amount" } } },
         ]);
 
         const lastYearSales = await Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: new Date(`${lastYear}-01-01`), $lte: new Date(`${lastYear}-12-31`) },
-                },
-            },
+            { $match: { createdAt: { $gte: new Date(`${lastYear}-01-01`), $lte: new Date(`${lastYear}-12-31`) } } },
             { $group: { _id: null, totalSales: { $sum: "$amount" } } },
         ]);
 
