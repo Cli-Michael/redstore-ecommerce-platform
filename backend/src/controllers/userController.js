@@ -1,19 +1,18 @@
-const User = require('../models/User'); // adjust path to your User model
+const User = require('../model/User')
 
 async function getUserById(req, res) {
   try {
-    const userId = req.params.id;
-    const user = await User.findById(userId).select('username email phone'); // select only fields you want to expose
+    const userId = req.query.userId
+    const user = await User.find(userId).select('usernamee email phoneNumber')
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (!user || user.length === 0) {
+      return res.status(404).send({ msg: 'user missing' })
     }
 
-    res.json(user);
+    res.status(200).json(user)
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(400).json({ err: err })
   }
 }
 
-module.exports = { getUserById };
+module.exports = { getuserById }
