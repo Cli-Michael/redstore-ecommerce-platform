@@ -1,35 +1,32 @@
 const Featured = require("../models/featuredModel");
 
-// Get all featured items
 const getAllFeaturedItems = async (req, res) => {
   try {
-    const featuredItems = await Featured.find();
-    if (featuredItems.length === 0) {
-      return res.status(404).json({ message: "No featured items found" });
+    const featuredItems = await Featured.find({});
+    if (!featuredItems) {
+      res.status(200).json({ message: "No items available" });
+      return;
     }
-    res.status(200).json({ featuredItems });
-  } catch (err) {
-    console.error("Error fetching featured items:", err);
-    res.status(500).json({ message: "Error fetching featured items", error: err.message });
+    res.status(201).json(featuredItems);
+  } catch (e) {
+    res.status(404).json({ error: e.message });
   }
 };
 
-// Get a single featured item by ID
 const getFeaturedById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const featuredItem = await Featured.findById(id);
-    if (!featuredItem) {
-      return res.status(404).json({ message: "Featured item not found" });
+    const featuredItem = await Featured.find(req.params.id);
+    if (featuredItem.length === 0) {
+      res.status(400).json({ message: "Item not found" });
+      return;
     }
-    res.status(200).json({ featuredItem });
-  } catch (err) {
-    console.error("Error fetching featured item:", err);
-    res.status(500).json({ message: "Error fetching featured item", error: err.message });
+    res.send({ item: featuredItem });
+  } catch (e) {
+    res.status(403).json({ message: e });
   }
 };
 
 module.exports = {
   getAllFeaturedItems,
-  getFeaturedById
+  getFeaturedById,
 };
