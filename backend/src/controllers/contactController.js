@@ -4,21 +4,17 @@ const handleContactForm = async (req, res) => {
     try {
         const { name, email, message } = req.body;
 
-        console.log("Received form data:", req.body); // Debugging
-
-        if (!name || !email || !message) {
-            return res.status(400).json({ error: "All fields are required." });
+        if (name === "" || email === "" || message === "") {
+            res.status(200).json({ message: "Some fields are missing." });
+            return;
         }
 
-        const newContact = new Contact({ name, email, message });
-        await newContact.save();
+        const newContact = new Contact({ username: name, emailAddress: email, content: message });
+        await newContact.create();
 
-        console.log("Contact saved:", newContact); // Debugging
-
-        res.status(200).json({ message: "Contact saved successfully." });
-    } catch (error) {
-        console.error("Error saving contact:", error);
-        res.status(500).json({ error: "Failed to save contact." });
+        res.status(201).json({ status: "Contact stored" });
+    } catch (err) {
+        res.status(404).json({ message: "Unable to store contact info" });
     }
 };
 
